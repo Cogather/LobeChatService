@@ -19,7 +19,7 @@ from models.user_group_role_link import User_Link
 from models.user_info import User_Info
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def app():
     """创建测试用的 Flask 应用"""
     app = create_app("test")
@@ -28,22 +28,39 @@ def app():
 @pytest.fixture
 def client(app):
     """创建测试客户端"""
-    return app.test_client()
+    with app.app_context():
+        # 确保每个测试客户端都有数据库环境
+        db.create_all()
+        yield app.test_client()
+        # 每个测试后清理数据，但保留表结构
+        db.session.remove()
+        # 清理所有表中的数据
+        for table in reversed(db.metadata.sorted_tables):
+            db.session.execute(table.delete())
+        db.session.commit()
 
 @pytest.fixture
 def runner(app):
     """创建测试命令行运行器"""
     return app.test_cli_runner()
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_database(app):
+    """设置测试数据库"""
+    with app.app_context():
+        # 创建所有表
+        db.create_all()
+        yield
+        # 测试会话结束后清理
+        db.drop_all()
 
 @pytest.fixture
 def db_session(app):
     """创建数据库会话"""
     with app.app_context():
-        db.create_all()
         yield db.session
+        db.session.rollback()
         db.session.remove()
-        db.drop_all()
 
 
 @pytest.fixture

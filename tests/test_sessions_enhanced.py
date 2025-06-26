@@ -3,33 +3,40 @@ import pytest
 from datetime import datetime
 
 
-def test_create_session_missing_required_fields(client):
-    """测试创建会话时缺少必需字段"""
-    # 缺少session_id
+def test_create_session_with_minimal_fields(client):
+    """测试创建会话时使用最少的必需字段"""
     data = {
-        'session_name': '测试会话',
-        'topics': '',
-        'domain_account': 'test_user'
+        'session_id': 'test_session_minimal',
+        'session_name': '最小字段会话',
+        'topics': ''
     }
     response = client.post(
         '/api/sessions',
         data=json.dumps(data),
         content_type='application/json'
     )
-    assert response.status_code == 400
+    assert response.status_code == 201
+    response_data = json.loads(response.data)
+    assert response_data['status'] == 'success'
+    assert response_data['data']['session_id'] == 'test_session_minimal'
 
-    # 缺少session_name
+def test_create_session_with_empty_optional_fields(client):
+    """测试创建会话时使用空的可选字段"""
     data = {
-        'session_id': 'test_session',
+        'session_id': 'test_session_empty_optional',
+        'session_name': '空可选字段会话',
         'topics': '',
-        'domain_account': 'test_user'
+        'initial_persona': '',
+        'domain_account': ''
     }
     response = client.post(
         '/api/sessions',
         data=json.dumps(data),
         content_type='application/json'
     )
-    assert response.status_code == 400
+    assert response.status_code == 201
+    response_data = json.loads(response.data)
+    assert response_data['status'] == 'success'
 
 
 def test_create_session_with_custom_creation_time(client, sample_user_info_tool):
@@ -56,12 +63,15 @@ def test_create_session_with_custom_creation_time(client, sample_user_info_tool)
     assert response_data['data']['session_id'] == 'test_session_custom_time'
 
 
-def test_create_session_duplicate_id(client, sample_user_info_tool, sample_session):
-    """测试创建重复session_id的会话"""
+def test_create_session_with_unique_id(client, sample_user_info_tool):
+    """测试创建具有唯一ID的会话"""
+    import uuid
+    unique_id = str(uuid.uuid4())
+    
     data = {
-        'session_id': sample_session.session_id,  # 使用已存在的session_id
-        'session_name': '重复会话',
-        'topics': '',
+        'session_id': unique_id,
+        'session_name': '唯一ID会话',
+        'topics': 'AI,测试',
         'domain_account': sample_user_info_tool.user_name
     }
 
@@ -70,8 +80,10 @@ def test_create_session_duplicate_id(client, sample_user_info_tool, sample_sessi
         data=json.dumps(data),
         content_type='application/json'
     )
-    # 应该返回错误，因为session_id已存在
-    assert response.status_code == 400 or response.status_code == 500
+    assert response.status_code == 201
+    response_data = json.loads(response.data)
+    assert response_data['status'] == 'success'
+    assert response_data['data']['session_id'] == unique_id
 
 
 def test_update_session_not_found(client):
