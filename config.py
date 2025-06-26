@@ -1,4 +1,5 @@
 import base64
+import os
 
 class Config:
     # 数据库配置 - 加密后的 URI
@@ -18,7 +19,14 @@ class Config:
     @classmethod
     def init_app(cls, app):
         """ 用于在应用初始化时设置 SQLALCHEMY_DATABASE_URI """
-        app.config['SQLALCHEMY_DATABASE_URI'] = cls.decrypt(cls.URI)
+        # 优先使用环境变量中的数据库URI
+        db_uri = os.environ.get('SQLALCHEMY_DATABASE_URI')
+        if db_uri:
+            app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+        elif cls.URI:
+            app.config['SQLALCHEMY_DATABASE_URI'] = cls.decrypt(cls.URI)
+        else:
+            app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///:memory:"
 
         # 将连接池参数传递到应用配置中
         app.config['SQLALCHEMY_POOL_SIZE'] = cls.SQLALCHEMY_POOL_SIZE
