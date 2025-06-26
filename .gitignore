@@ -1,0 +1,6 @@
+.idea/
+venv/
+venv_lobe/
+# 忽略 Python 编译生成的字节码文件
+__pycache__/
+*.py[cod]
