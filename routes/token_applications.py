@@ -51,6 +51,7 @@ def get_token_applications(domain_account):
     if applications:
         return jsonify([{
             'request_id': app.request_id,
+            'domain_account': app.domain_account,
             'requested_tokens': app.requested_tokens,
             'application_status': app.application_status,
             'reason_for_request': app.reason_for_request,
