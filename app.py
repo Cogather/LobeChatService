@@ -82,7 +82,12 @@ def create_app(config=None):
     return app
 
 
-application = create_app()
+import os
+
+# 只在非测试环境下创建应用实例
+if os.environ.get('TESTING') != 'true':
+    application = create_app()
 
 if __name__ == '__main__':
-    application.run(debug=True, host='0.0.0.0', port=8000)
+    app = create_app()
+    app.run(debug=True, host='0.0.0.0', port=8000)
